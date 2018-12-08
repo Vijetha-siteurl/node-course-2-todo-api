@@ -5,7 +5,7 @@ const {ObjectId} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
-var {Users} = require('./models/users');
+var {User} = require('./models/users');
 
 var app = express();
 const port = process.env.PORT || 3000;
@@ -23,19 +23,6 @@ app.post('/todos', (req, res) => {
     });
 });
 
-app.post('/users', (req, res) => {
-    var users = new Users({
-        email : req.body.email
-    });
-
-    users.save().then((doc) => {
-        res.send(doc);
-    }, (e) => {
-        res.status(400).send(e);
-    });
-});
-
-
 app.get('/todos', (req, res) => {
     Todo.find().then((doc) => {
        res.send({doc});
@@ -43,8 +30,6 @@ app.get('/todos', (req, res) => {
         res.status(400).send(e);
     });
 });
-
-
 
 app.get('/todos/:id', (req, res) => {
     var id = req.params.id;
@@ -65,7 +50,6 @@ app.get('/todos/:id', (req, res) => {
 
 });
 
-
 app.delete('/todos/:id', (req, res) => {
     var id = req.params.id;
     if(!ObjectId.isValid(id))
@@ -84,7 +68,6 @@ app.delete('/todos/:id', (req, res) => {
     });
 
 });
-
 
 app.patch('/todos/:id', (req, res) => {
     var id = req.params.id;
@@ -109,6 +92,21 @@ app.patch('/todos/:id', (req, res) => {
         res.send({todo});
     }).catch ((e) => {
         res.status(400).send();
+    });
+});
+
+app.post('/users', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+
+    var user = new User(body);
+    
+    user.save().then(() => {
+        return user.generateAuthToken();
+        //res.send(doc);
+    }).then((token)=>{
+        res.header('x-auth',token).send(user);
+    }).catch((e) => {
+        res.status(400).send(e);
     });
 });
 
